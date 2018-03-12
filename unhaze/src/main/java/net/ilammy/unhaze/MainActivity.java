@@ -6,6 +6,8 @@ import android.os.Bundle;
 import android.support.constraint.ConstraintLayout;
 import android.util.Log;
 
+import java.io.IOException;
+
 import static android.content.ContentValues.TAG;
 
 public class MainActivity extends Activity {
@@ -33,6 +35,32 @@ public class MainActivity extends Activity {
     @Override
     protected void onPause() {
         super.onPause();
+
+        // Release the camera for other activities while we're in background.
+        if (m_camera != null) {
+            m_camera.unlock();
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        // Reconnect to the camera when we are moved into foreground.
+        if (m_camera != null) {
+            try {
+                m_camera.reconnect();
+            } catch (IOException e) {
+                Log.e(TAG, "failed to reconnect to the camera: " + e.getMessage());
+            }
+        }
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+
+        // Release the camere when we are destroyed. This is important.
         if (m_camera != null) {
             m_camera.release();
         }
