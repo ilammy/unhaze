@@ -5,6 +5,7 @@ import android.hardware.Camera;
 import android.os.Bundle;
 import android.support.constraint.ConstraintLayout;
 import android.util.Log;
+import android.view.Surface;
 
 import java.io.IOException;
 
@@ -24,8 +25,7 @@ public class MainActivity extends Activity {
             return;
         }
 
-        // Make sure the image on the preview is the same as seen by the user's eyes.
-        m_camera.setDisplayOrientation(90);
+        fixCameraOrientation();
 
         CameraPreview preview = new CameraPreview(this, m_camera);
         ConstraintLayout layout = findViewById(R.id.constraintLayout);
@@ -73,5 +73,31 @@ public class MainActivity extends Activity {
             Log.e(TAG, "camera not available: " + e.getMessage());
             return null;
         }
+    }
+
+    private void fixCameraOrientation() {
+        Camera.CameraInfo info = new Camera.CameraInfo();
+        Camera.getCameraInfo(0, info);
+
+        int rotation = getWindowManager().getDefaultDisplay().getRotation();
+        int degrees = 0;
+        switch (rotation) {
+            case Surface.ROTATION_0:
+                degrees = 0;
+                break;
+            case Surface.ROTATION_90:
+                degrees = 90;
+                break;
+            case Surface.ROTATION_180:
+                degrees = 180;
+                break;
+            case Surface.ROTATION_270:
+                degrees = 270;
+                break;
+        }
+
+        int orientation = (info.orientation - degrees + 360) % 360;
+
+        m_camera.setDisplayOrientation(orientation);
     }
 }
