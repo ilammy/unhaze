@@ -7,60 +7,43 @@ import android.support.constraint.ConstraintLayout;
 import android.util.Log;
 import android.view.Surface;
 
-import java.io.IOException;
-
 import static android.content.ContentValues.TAG;
 
 public class MainActivity extends Activity {
 
     private Camera m_camera;
+    private CameraPreview m_preview;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        m_preview = new CameraPreview(this);
+
+        ConstraintLayout layout = findViewById(R.id.constraintLayout);
+        layout.addView(m_preview);
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+
         m_camera = getCameraInstance();
         if (m_camera == null) {
             return;
         }
-
         fixCameraOrientation();
 
-        CameraPreview preview = new CameraPreview(this, m_camera);
-        ConstraintLayout layout = findViewById(R.id.constraintLayout);
-        layout.addView(preview);
+        m_preview.useCamera(m_camera);
     }
 
     @Override
-    protected void onPause() {
-        super.onPause();
+    protected void onStop() {
+        super.onStop();
 
-        // Release the camera for other activities while we're in background.
-        if (m_camera != null) {
-            m_camera.unlock();
-        }
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-
-        // Reconnect to the camera when we are moved into foreground.
-        if (m_camera != null) {
-            try {
-                m_camera.reconnect();
-            } catch (IOException e) {
-                Log.e(TAG, "failed to reconnect to the camera: " + e.getMessage());
-            }
-        }
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-
-        // Release the camere when we are destroyed. This is important.
+        // Release the camera when we are no longer in the foreground.
+        // This is important to let other applications use the camera.
         if (m_camera != null) {
             m_camera.release();
         }
