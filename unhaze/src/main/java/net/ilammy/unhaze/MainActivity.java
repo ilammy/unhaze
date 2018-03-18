@@ -13,6 +13,7 @@ public class MainActivity extends Activity {
 
     private Camera m_camera;
     private CameraPreview m_preview;
+    private OverlaySurfaceView m_overlay;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -20,9 +21,11 @@ public class MainActivity extends Activity {
         setContentView(R.layout.activity_main);
 
         m_preview = new CameraPreview(this);
+        m_overlay = new OverlaySurfaceView(this);
 
         ConstraintLayout layout = findViewById(R.id.constraintLayout);
         layout.addView(m_preview);
+        layout.addView(m_overlay);
     }
 
     @Override
@@ -36,6 +39,22 @@ public class MainActivity extends Activity {
         fixCameraOrientation();
 
         m_preview.useCamera(m_camera);
+
+        m_overlay.onResume();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+
+        m_overlay.onResume();
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+
+        m_overlay.onPause();
     }
 
     @Override
