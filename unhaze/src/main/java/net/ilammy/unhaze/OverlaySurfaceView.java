@@ -1,6 +1,6 @@
 package net.ilammy.unhaze;
 
-import android.content.Context;
+import android.app.Activity;
 import android.graphics.PixelFormat;
 import android.opengl.GLSurfaceView;
 
@@ -8,8 +8,10 @@ public class OverlaySurfaceView extends GLSurfaceView {
 
     private final OverlayRenderer m_renderer;
 
-    public OverlaySurfaceView(Context context) {
-        super(context);
+    private SpatialAwareness m_spatialAwareness;
+
+    public OverlaySurfaceView(Activity activity) {
+        super(activity);
 
         // Use OpenGL ES 2.0.
         setEGLContextClientVersion(2);
@@ -23,5 +25,24 @@ public class OverlaySurfaceView extends GLSurfaceView {
         m_renderer = new OverlayRenderer();
         setRenderer(m_renderer);
         setRenderMode(RENDERMODE_WHEN_DIRTY);
+
+        // Prepare to track device movements and update the scene accordingly.
+        m_spatialAwareness = new SpatialAwareness(activity);
+        m_spatialAwareness.setRenderer(m_renderer);
+        m_spatialAwareness.setSurfaceView(this);
+    }
+
+    @Override
+    public void onResume() {
+        super.onResume();
+
+        m_spatialAwareness.startTracking();
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+
+        m_spatialAwareness.stopTracking();
     }
 }
