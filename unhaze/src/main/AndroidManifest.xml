@@ -2,10 +2,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="net.ilammy.unhaze">
 
-    <uses-permission android:name="android.permission.CAMERA" />
-    <uses-feature
-        android:name="android.hardware.camera"
-        android:required="false" />
     <uses-feature
         android:glEsVersion="0x00020000"
         android:required="true" />
