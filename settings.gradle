@@ -1,1 +1,1 @@
-include ':unhaze'
+include ':unhaze', ':astrolib'
