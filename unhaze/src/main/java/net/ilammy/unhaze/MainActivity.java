@@ -3,6 +3,10 @@ package net.ilammy.unhaze;
 import android.app.Activity;
 import android.os.Bundle;
 import android.support.constraint.ConstraintLayout;
+import android.util.Log;
+
+import net.ilammy.unhaze.astro.Star;
+import net.ilammy.unhaze.astro.Stars;
 
 public class MainActivity extends Activity {
 
@@ -17,6 +21,8 @@ public class MainActivity extends Activity {
 
         ConstraintLayout layout = findViewById(R.id.constraintLayout);
         layout.addView(m_overlay);
+
+        Stars.loadStars(this);
     }
 
     @Override
