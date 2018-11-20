@@ -21,7 +21,7 @@ public class Stars {
         XmlResourceParser xmlStars = context.getResources().getXml(R.xml.stars);
 
         try {
-            Star nextStar = null;
+            Star.Builder nextStar = null;
             int eventType = xmlStars.getEventType();
             String currentTag = null;
             while (eventType != XmlPullParser.END_DOCUMENT) {
@@ -31,7 +31,7 @@ public class Stars {
                         stars.clear();
                     }
                     if (tag.equals("star")) {
-                        nextStar = new Star();
+                        nextStar = new Star.Builder();
                     }
                     currentTag = tag;
                 }
@@ -43,14 +43,8 @@ public class Stars {
                     if (currentTag.equals("rightAscension")) {
                         nextStar.rightAscension = Double.parseDouble(value);
                     }
-                    if (currentTag.equals("rightAscensionDeltaPerYear")) {
-                        nextStar.rightAscensionDeltaPerYear = Double.parseDouble(value);
-                    }
                     if (currentTag.equals("declination")) {
                         nextStar.declination = Double.parseDouble(value);
-                    }
-                    if (currentTag.equals("declinationDeltaPerYear")) {
-                        nextStar.declinationDeltaPerYear = Double.parseDouble(value);
                     }
                     if (currentTag.equals("distance")) {
                         nextStar.distance = Double.parseDouble(value);
@@ -77,7 +71,7 @@ public class Stars {
                         break;
                     }
                     if (tag.equals("star")) {
-                        stars.add(nextStar);
+                        stars.add(new Star(nextStar));
                     }
                     currentTag = null;
                 }

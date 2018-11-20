@@ -80,8 +80,6 @@ END
     my $hip    = $star[$fields{"hip"}];
     my $ra     = $star[$fields{"rarad"}];
     my $dec    = $star[$fields{"decrad"}];
-    my $pmra   = $star[$fields{"pmrarad"}];
-    my $pmdec  = $star[$fields{"pmdecrad"}];
     my $dist   = $star[$fields{"dist"}];
     my $mag    = $star[$fields{"mag"}];
     my $spect  = $star[$fields{"spect"}];
@@ -97,9 +95,7 @@ END
 <star>
   <hipparcosNumber>$hip</hipparcosNumber>
   <rightAscension>$ra</rightAscension>
-  <rightAscensionDeltaPerYear>$pmra</rightAscensionDeltaPerYear>
   <declination>$dec</declination>
-  <declinationDeltaPerYear>$pmdec</declinationDeltaPerYear>
   <distance>$dist</distance>
   <magnitude>$mag</magnitude>
   <spectralClass>$spect</spectralClass>

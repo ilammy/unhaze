@@ -1,83 +1,37 @@
 package net.ilammy.unhaze.astro;
 
-import java.util.Calendar;
-
 public class Star {
-    int hipparcosNumber;
-    double rightAscension;
-    double rightAscensionDeltaPerYear;
-    double declination;
-    double declinationDeltaPerYear;
-    double distance;
-    double magnitude;
-    String spectralClass;
-    String bayerName;
-    String flamsteedName;
-    Constellation constellation;
+    public final int hipparcosNumber;
+    public final double rightAscension;
+    public final double declination;
+    public final double distance;
+    public final double magnitude;
+    public final String spectralClass;
+    public final String bayerName;
+    public final String flamsteedName;
+    public final Constellation constellation;
 
-    /**
-     * HIPPARCOS catalog number (zero if not assigned).
-     */
-    public int getHipparcosNumber() {
-        return hipparcosNumber;
+    Star(Builder builder) {
+        this.hipparcosNumber = builder.hipparcosNumber;
+        this.rightAscension = builder.rightAscension;
+        this.declination = builder.declination;
+        this.distance = builder.distance;
+        this.magnitude = builder.magnitude;
+        this.spectralClass = builder.spectralClass;
+        this.bayerName = builder.bayerName;
+        this.flamsteedName = builder.flamsteedName;
+        this.constellation = builder.constellation;
     }
 
-    /**
-     * Right ascension for J2000 in radians at given date.
-     */
-    public double getRightAscension(Calendar date) {
-        // TODO: compute with adjustments
-        return rightAscension;
-    }
-
-    /**
-     * Declination for J2000 in radians at given date.
-     */
-    public double getDeclination(Calendar date) {
-        // TODO: compute with adjustments
-        return declination;
-    }
-
-    /**
-     * Distance from the Sun in parsecs.
-     */
-    public double getDistance() {
-        return distance;
-    }
-
-    /**
-     * Apparent visual magnitude.
-     */
-    public double getMagnitude() {
-        return magnitude;
-    }
-
-    /**
-     * Spectral class (OBAFGKM).
-     */
-    public String getSpectralClass() {
-        return spectralClass;
-    }
-
-    /**
-     * Bayer designation (empty if none).
-     */
-    public String getBayerName() {
-        // TODO: use proper Unicode maybe?
-        return bayerName;
-    }
-
-    /**
-     * Flamsteed number (empty if none).
-     */
-    public String getFlamsteedName() {
-        return flamsteedName;
-    }
-
-    /**
-     * Constellation this star belongs to.
-     */
-    public Constellation getConstellation() {
-        return constellation;
+    static class Builder {
+        int hipparcosNumber;
+        double rightAscension;
+        double declination;
+        double distance;
+        double magnitude;
+        String spectralClass;
+        String bayerName;
+        String flamsteedName;
+        Constellation constellation;
     }
 }
