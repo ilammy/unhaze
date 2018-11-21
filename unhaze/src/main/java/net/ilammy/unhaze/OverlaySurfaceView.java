@@ -4,6 +4,8 @@ import android.app.Activity;
 import android.graphics.PixelFormat;
 import android.opengl.GLSurfaceView;
 
+import net.ilammy.unhaze.render.StarModel;
+
 public class OverlaySurfaceView extends GLSurfaceView {
 
     private final OverlayRenderer m_renderer;
@@ -22,7 +24,7 @@ public class OverlaySurfaceView extends GLSurfaceView {
         setEGLConfigChooser(8, 8, 8, 8, 16, 0);
 
         // Set renderer and make sure the view is updated on demand.
-        m_renderer = new OverlayRenderer();
+        m_renderer = new OverlayRenderer(activity);
         setRenderer(m_renderer);
         setRenderMode(RENDERMODE_WHEN_DIRTY);
 

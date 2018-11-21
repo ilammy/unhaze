@@ -7,6 +7,7 @@ import android.util.Log;
 
 import net.ilammy.unhaze.astro.Star;
 import net.ilammy.unhaze.astro.Stars;
+import net.ilammy.unhaze.render.StarModel;
 
 public class MainActivity extends Activity {
 
