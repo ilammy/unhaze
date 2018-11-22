@@ -4,19 +4,10 @@
         <![CDATA[
 attribute vec4 vPosition;
 
-uniform mat4 umBillboard;
-uniform mat4 umModel;
-uniform mat4 umView;
-uniform mat4 umProjection;
+uniform mat4 umViewProjection;
 
 void main() {
-    /*
-     * First rotate the star quad so that it will face the camera,
-     * then move it into position with the model matrix,
-     * after that aim the camera with the view matrix,
-     * and take a picture with the projection matrix.
-     */
-    gl_Position = umProjection * umView * umModel * umBillboard * vPosition;
+    gl_Position = umViewProjection * vPosition;
 }
         ]]>
     </string>

@@ -17,6 +17,7 @@ public class OverlayRenderer implements GLSurfaceView.Renderer {
     private StarModel stars;
     private float[] m_projectionMatrix = new float[16];
     private float[] m_rotationMatrix = new float[16];
+    private float[] m_vpMatrix = new float[16];
 
     public OverlayRenderer(Context context) {
         this.context = context;
@@ -26,6 +27,9 @@ public class OverlayRenderer implements GLSurfaceView.Renderer {
     public void onSurfaceCreated(GL10 unused, EGLConfig config) {
         // Prepare the model once we have OpenGL ES context ready.
         this.stars = new StarModel(this.context);
+
+        // TODO: reload on every time change to recompute horizontal coordinates
+        this.stars.loadStars(Stars.knownStars());
 
         Matrix.setIdentityM(m_rotationMatrix, 0);
 
@@ -47,17 +51,18 @@ public class OverlayRenderer implements GLSurfaceView.Renderer {
         Matrix.frustumM(m_projectionMatrix, 0,
                 -aspectRatio * zoom, aspectRatio * zoom,
                 -1 * zoom, 1 * zoom,
-                80, 120);
+                80, 240);
     }
 
     @Override
     public void onDrawFrame(GL10 unused) {
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
 
-        this.stars.draw(Stars.knownStars(), m_rotationMatrix, m_projectionMatrix);
+        this.stars.draw(m_vpMatrix);
     }
 
     public void setRotationVector(float[] rotationVector) {
         SensorManager.getRotationMatrixFromVector(m_rotationMatrix, rotationVector);
+        Matrix.multiplyMM(m_vpMatrix, 0, m_projectionMatrix, 0, m_rotationMatrix, 0);
     }
 }
