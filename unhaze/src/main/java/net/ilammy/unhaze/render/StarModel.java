@@ -16,7 +16,8 @@ public class StarModel {
     // We render the stars in a dome with its center in origin and given radius.
     // The observer should be in the center or they'd see that heavens are fake.
     private static final float STAR_DOME_RADIUS = 100.0f;
-    private static final float STAR_QUAD_RADIUS = 0.25f;
+    private static final float STAR_QUAD_RADIUS_6 = 0.1f;
+    private static final float STAR_QUAD_RADIUS_1 = 0.5f;
 
     // Every star is unique and still the same. In our world every star is a square (aka quad)
     // which is constructed from two triangles:
@@ -140,12 +141,13 @@ public class StarModel {
 
     private void pushStar(Star star) {
         int offset = this.vertexList.position();
+        float radius = radiusForMagnitude(star.magnitude);
 
         float[] vertices = new float[] {
-                +STAR_QUAD_RADIUS, +STAR_QUAD_RADIUS, 0.0f,
-                -STAR_QUAD_RADIUS, +STAR_QUAD_RADIUS, 0.0f,
-                -STAR_QUAD_RADIUS, -STAR_QUAD_RADIUS, 0.0f,
-                +STAR_QUAD_RADIUS, -STAR_QUAD_RADIUS, 0.0f,
+                +radius, +radius, 0.0f,
+                -radius, +radius, 0.0f,
+                -radius, -radius, 0.0f,
+                +radius, -radius, 0.0f,
         };
 
         repositionStar(star, vertices);
@@ -157,6 +159,13 @@ public class StarModel {
                 (short) (offset + 0), (short) (offset + 3), (short) (offset + 2),
         };
         this.drawList.put(drawOrder);
+    }
+
+    private static float radiusForMagnitude(double magnitude) {
+        // Keep it simple. Assign STAR_QUAD_RADIUS_1 to stars with m = 1.0 and
+        // STAR_QUAD_RADIUS_6 to m = 6.0, then interpolate linearly between those.
+        return (float) ((6.0 - magnitude) / (6.0 - 1.0) * (STAR_QUAD_RADIUS_1 - STAR_QUAD_RADIUS_6)
+                + STAR_QUAD_RADIUS_6);
     }
 
     private static void repositionStar(Star star, float[] vertices) {
