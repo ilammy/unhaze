@@ -1,7 +1,10 @@
 package net.ilammy.unhaze.render;
 
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.opengl.GLES20;
+import android.opengl.GLUtils;
 
 import net.ilammy.unhaze.R;
 import net.ilammy.unhaze.astro.Star;
@@ -31,13 +34,18 @@ public class StarModel {
     // Each star's model is the same so we can share the vertex data between them. We only need
     // to modify the model-view matrix so that a star is drawn at its designated place and the
     // quad is facing the camera.
+    private FloatBuffer colorList;
     private FloatBuffer vertexList;
+    private FloatBuffer textureList;
     private ShortBuffer drawList;
     private int starCount;
 
+    private final int starTexture;
     private final int program;
 
     public StarModel(Context context) {
+        this.starTexture = loadTexture(context, R.drawable.star_texture);
+
         String fragmentShaderCode = context.getString(R.string.starFragmentShader);
         String vertexShaderCode = context.getString(R.string.starVertexShader);
 
@@ -54,62 +62,146 @@ public class StarModel {
         int shader = GLES20.glCreateShader(type);
         GLES20.glShaderSource(shader, code);
         GLES20.glCompileShader(shader);
+        checkShader(shader);
         return shader;
+    }
+
+    private static void checkShader(int shader) {
+        int[] status = new int[1];
+        GLES20.glGetShaderiv(shader, GLES20.GL_COMPILE_STATUS, status, 0);
+
+        if (status[0] == 0) {
+            String error = GLES20.glGetShaderInfoLog(shader);
+            GLES20.glDeleteShader(shader);
+            throw new RuntimeException("failed to compile shader: " + error);
+        }
+    }
+
+    private static int loadTexture(Context context, int resourceId) {
+        int[] texture = new int[1];
+        GLES20.glGenTextures(1, texture, 0);
+        readTexture(texture, context, resourceId);
+        checkTexture(texture);
+        return texture[0];
+    }
+
+    private static void readTexture(int[] texture, Context context, int resourceId) {
+        // Don't prescale anything, please.
+        BitmapFactory.Options options = new BitmapFactory.Options();
+        options.inScaled = false;
+
+        Bitmap bitmap = BitmapFactory.decodeResource(context.getResources(), resourceId, options);
+
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, texture[0]);
+
+        // Set scale filtering for nicer interpolation.
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);
+        GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MAG_FILTER, GLES20.GL_LINEAR);
+
+        GLUtils.texImage2D(GLES20.GL_TEXTURE_2D, 0, bitmap, 0);
+
+        // The bitmap has been copied to video memory. Free up conventional memory right now.
+        bitmap.recycle();
+    }
+
+    private static void checkTexture(int[] texture) {
+        if (texture[0] == 0) {
+            GLES20.glDeleteTextures(1, texture, 0);
+            throw new RuntimeException("failed to load texture");
+        }
     }
 
     public void draw(float[] vpMatrix) {
         GLES20.glUseProgram(this.program);
 
-        int vPosition = GLES20.glGetAttribLocation(this.program, "vPosition");
         int umViewProjection = GLES20.glGetUniformLocation(this.program, "umViewProjection");
-        int vColor = GLES20.glGetUniformLocation(this.program, "vColor");
+        int utTexture = GLES20.glGetUniformLocation(this.program, "utTexture");
+
+        int avPosition = GLES20.glGetAttribLocation(this.program, "avPosition");
+        int avTexture = GLES20.glGetAttribLocation(this.program, "avTexture");
+        int avColor = GLES20.glGetAttribLocation(this.program, "avColor");
 
         int vertexCount = 3 * 2 * this.starCount;
 
-        // Prepare position data.
-        GLES20.glEnableVertexAttribArray(vPosition);
-        GLES20.glVertexAttribPointer(vPosition, 3, GLES20.GL_FLOAT, false, 3 * 4, vertexList);
-
-        // Set view-projection matrix.
+        // Set fixed view-projection matrix.
         GLES20.glUniformMatrix4fv(umViewProjection, 1, false, vpMatrix, 0);
 
-        // Set color.
-        float[] white = new float[] { 1.0f, 1.0f, 1.0f, 1.0f };
-        GLES20.glUniform4fv(vColor, 1, white, 0);
+        // Bind the star texture.
+        GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
+        GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, this.starTexture);
+        GLES20.glUniform1i(utTexture, 0);
+
+        // Bind per-vertex attribute arrays.
+        GLES20.glEnableVertexAttribArray(avPosition);
+        GLES20.glEnableVertexAttribArray(avTexture);
+        GLES20.glEnableVertexAttribArray(avColor);
+
+        // Set per-vertex attributes.
+        GLES20.glVertexAttribPointer(avPosition, 3, GLES20.GL_FLOAT, false, 3 * 4, this.vertexList);
+        GLES20.glVertexAttribPointer(avTexture, 2, GLES20.GL_FLOAT, false, 2 * 4, this.textureList);
+        GLES20.glVertexAttribPointer(avColor, 3, GLES20.GL_FLOAT, false, 3 * 4, this.colorList);
 
         // Draw a shitload of triangles.
         GLES20.glDrawElements(GLES20.GL_TRIANGLES, vertexCount, GLES20.GL_UNSIGNED_SHORT, drawList);
 
-        // Unbind the vertex array.
-        GLES20.glDisableVertexAttribArray(vPosition);
+        // Unbind the attribute arrays.
+        GLES20.glDisableVertexAttribArray(avPosition);
+        GLES20.glDisableVertexAttribArray(avTexture);
+        GLES20.glDisableVertexAttribArray(avColor);
     }
 
     public void loadStars(List<Star> stars) {
-        this.vertexList = allocateVertexList(stars.size());
-        this.drawList = allocateDrawList(stars.size());
+        this.colorList = allocateColorList(this.colorList, stars.size());
+        this.vertexList = allocateVertexList(this.vertexList, stars.size());
+        this.textureList = allocateTextureList(this.textureList, stars.size());
+        this.drawList = allocateDrawList(this.drawList, stars.size());
 
         for (Star star : stars) {
             pushStar(star);
         }
 
+        this.colorList.position(0);
         this.vertexList.position(0);
+        this.textureList.position(0);
         this.drawList.position(0);
 
         this.starCount = stars.size();
     }
 
-    private FloatBuffer allocateVertexList(int starCount) {
+    // TODO: reduce copypasta amounts here
+
+    private static FloatBuffer allocateColorList(FloatBuffer buffer, int starCount) {
+        int capacity = colorCapacity(starCount);
+
+        // Reuse existing buffer if possible.
+        if (buffer != null && buffer.capacity() >= capacity) {
+            buffer.clear();
+            return buffer;
+        }
+
+        return ByteBuffer.allocateDirect(capacity)
+                .order(ByteOrder.nativeOrder())
+                .asFloatBuffer();
+    }
+
+    private static int colorCapacity(int starCount) {
+        // We need 4 points to describe a quad, each point requires 3 color components,
+        // and each component takes 4 bytes (float).
+        return starCount * 4 * 3 * 4;
+    }
+
+    private static FloatBuffer allocateVertexList(FloatBuffer buffer, int starCount) {
         int capacity = vertexCapacity(starCount);
 
         // Reuse existing buffer if possible.
-        if (this.vertexList != null && this.vertexList.capacity() >= capacity) {
-            this.vertexList.clear();
-            return this.vertexList;
+        if (buffer != null && buffer.capacity() >= capacity) {
+            buffer.clear();
+            return buffer;
         }
 
-        ByteBuffer bbVertexList = ByteBuffer.allocateDirect(capacity);
-        bbVertexList.order(ByteOrder.nativeOrder());
-        return bbVertexList.asFloatBuffer();
+        return ByteBuffer.allocateDirect(capacity)
+                .order(ByteOrder.nativeOrder())
+                .asFloatBuffer();
     }
 
     private static int vertexCapacity(int starCount) {
@@ -118,18 +210,38 @@ public class StarModel {
         return starCount * 4 * 3 * 4;
     }
 
-    private ShortBuffer allocateDrawList(int starCount) {
+    private static FloatBuffer allocateTextureList(FloatBuffer buffer, int starCount) {
+        int capacity = textureCapacity(starCount);
+
+        // Reuse existing buffer if possible.
+        if (buffer != null && buffer.capacity() >= capacity) {
+            buffer.clear();
+            return buffer;
+        }
+
+        return ByteBuffer.allocateDirect(capacity)
+                .order(ByteOrder.nativeOrder())
+                .asFloatBuffer();
+    }
+
+    private static int textureCapacity(int starCount) {
+        // We need 4 points to describe a quad, each point requires 2 texture coordinates,
+        // and each coordinate takes 4 bytes (float).
+        return starCount * 4 * 2 * 4;
+    }
+
+    private static ShortBuffer allocateDrawList(ShortBuffer buffer, int starCount) {
         int capacity = drawListCapacity(starCount);
 
         // Reuse existing buffer if possible.
-        if (this.drawList != null && this.drawList.capacity() >= capacity) {
-            this.drawList.clear();
-            return this.drawList;
+        if (buffer != null && buffer.capacity() >= capacity) {
+            buffer.clear();
+            return buffer;
         }
 
-        ByteBuffer bbVertexList = ByteBuffer.allocateDirect(capacity);
-        bbVertexList.order(ByteOrder.nativeOrder());
-        return bbVertexList.asShortBuffer();
+        return ByteBuffer.allocateDirect(capacity)
+                .order(ByteOrder.nativeOrder())
+                .asShortBuffer();
     }
 
     private static int drawListCapacity(int starCount) {
@@ -139,6 +251,7 @@ public class StarModel {
         return starCount * 2 * 3 * 2;
     }
 
+    // TODO: split this method, get rid of offset calculation (use star index directly)
     private void pushStar(Star star) {
         int offset = this.vertexList.position();
         float radius = radiusForMagnitude(star.magnitude);
@@ -154,11 +267,29 @@ public class StarModel {
 
         this.vertexList.put(vertices);
 
+        // TODO: this can be moved into a constant or something
+        float[] texture = new float[] {
+                // The coordinates are rotated by 90 degrees counterclockwise
+                // to keep the image upright.
+                0.0f, 1.0f,
+                0.0f, 0.0f,
+                1.0f, 0.0f,
+                1.0f, 1.0f,
+        };
+
+        this.textureList.put(texture);
+
         short[] drawOrder = new short[] {
                 (short) (offset + 0), (short) (offset + 2), (short) (offset + 1),
                 (short) (offset + 0), (short) (offset + 3), (short) (offset + 2),
         };
         this.drawList.put(drawOrder);
+
+        // TODO: derive color from spectral class
+        float[] color = new float[] { 1.0f, 1.0f, 1.0f };
+        for (int i = 0; i < vertices.length / 3; i++) {
+            this.colorList.put(color);
+        }
     }
 
     private static float radiusForMagnitude(double magnitude) {
