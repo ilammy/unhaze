@@ -156,8 +156,8 @@ public class StarModel {
         this.textureList = allocateTextureList(this.textureList, stars.size());
         this.drawList = allocateDrawList(this.drawList, stars.size());
 
-        for (Star star : stars) {
-            pushStar(star);
+        for (int i = 0; i < stars.size(); i++) {
+            pushStar(stars.get(i), i);
         }
 
         this.colorList.position(0);
@@ -251,43 +251,50 @@ public class StarModel {
         return starCount * 2 * 3 * 2;
     }
 
-    // TODO: split this method, get rid of offset calculation (use star index directly)
-    private void pushStar(Star star) {
-        int offset = this.vertexList.position();
-        float radius = radiusForMagnitude(star.magnitude);
+    private void pushStar(Star star, int starIndex) {
+        pushStarVertexData(star);
+        pushStarTextureData();
+        pushStarDrawOrder(starIndex);
+        pushStarColorData(star);
+    }
 
+    private void pushStarVertexData(Star star) {
+        float radius = radiusForMagnitude(star.magnitude);
         float[] vertices = new float[] {
                 +radius, +radius, 0.0f,
                 -radius, +radius, 0.0f,
                 -radius, -radius, 0.0f,
                 +radius, -radius, 0.0f,
         };
-
         repositionStar(star, vertices);
-
         this.vertexList.put(vertices);
+    }
 
-        // TODO: this can be moved into a constant or something
-        float[] texture = new float[] {
-                // The coordinates are rotated by 90 degrees counterclockwise
-                // to keep the image upright.
-                0.0f, 1.0f,
-                0.0f, 0.0f,
-                1.0f, 0.0f,
-                1.0f, 1.0f,
-        };
+    // The coordinates are rotated by 90 degrees counterclockwise to keep the image upright.
+    private static final float[] STAR_TEXTURE_COORDS = new float[] {
+            0.0f, 1.0f,
+            0.0f, 0.0f,
+            1.0f, 0.0f,
+            1.0f, 1.0f,
+    };
 
-        this.textureList.put(texture);
+    private void pushStarTextureData() {
+        this.textureList.put(STAR_TEXTURE_COORDS);
+    }
 
+    private void pushStarDrawOrder(int starIndex) {
+        int offset = starIndex * 4;
         short[] drawOrder = new short[] {
                 (short) (offset + 0), (short) (offset + 2), (short) (offset + 1),
                 (short) (offset + 0), (short) (offset + 3), (short) (offset + 2),
         };
         this.drawList.put(drawOrder);
+    }
 
+    private void pushStarColorData(Star star) {
         // TODO: derive color from spectral class
         float[] color = new float[] { 1.0f, 1.0f, 1.0f };
-        for (int i = 0; i < vertices.length / 3; i++) {
+        for (int i = 0; i < 4; i++) {
             this.colorList.put(color);
         }
     }
