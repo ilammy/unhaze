@@ -151,10 +151,10 @@ public class StarModel {
     }
 
     public void loadStars(List<Star> stars) {
-        this.colorList = allocateColorList(this.colorList, stars.size());
-        this.vertexList = allocateVertexList(this.vertexList, stars.size());
-        this.textureList = allocateTextureList(this.textureList, stars.size());
-        this.drawList = allocateDrawList(this.drawList, stars.size());
+        this.colorList = allocate(colorCapacity(stars.size())).asFloatBuffer();
+        this.vertexList = allocate(vertexCapacity(stars.size())).asFloatBuffer();
+        this.textureList = allocate(textureCapacity(stars.size())).asFloatBuffer();
+        this.drawList = allocate(drawListCapacity(stars.size())).asShortBuffer();
 
         for (int i = 0; i < stars.size(); i++) {
             pushStar(stars.get(i), i);
@@ -168,20 +168,8 @@ public class StarModel {
         this.starCount = stars.size();
     }
 
-    // TODO: reduce copypasta amounts here
-
-    private static FloatBuffer allocateColorList(FloatBuffer buffer, int starCount) {
-        int capacity = colorCapacity(starCount);
-
-        // Reuse existing buffer if possible.
-        if (buffer != null && buffer.capacity() >= capacity) {
-            buffer.clear();
-            return buffer;
-        }
-
-        return ByteBuffer.allocateDirect(capacity)
-                .order(ByteOrder.nativeOrder())
-                .asFloatBuffer();
+    private static ByteBuffer allocate(int capacity) {
+        return ByteBuffer.allocateDirect(capacity).order(ByteOrder.nativeOrder());
     }
 
     private static int colorCapacity(int starCount) {
@@ -190,58 +178,16 @@ public class StarModel {
         return starCount * 4 * 3 * 4;
     }
 
-    private static FloatBuffer allocateVertexList(FloatBuffer buffer, int starCount) {
-        int capacity = vertexCapacity(starCount);
-
-        // Reuse existing buffer if possible.
-        if (buffer != null && buffer.capacity() >= capacity) {
-            buffer.clear();
-            return buffer;
-        }
-
-        return ByteBuffer.allocateDirect(capacity)
-                .order(ByteOrder.nativeOrder())
-                .asFloatBuffer();
-    }
-
     private static int vertexCapacity(int starCount) {
         // We need 4 points to describe a quad, each point requires 3 coordinates,
         // and each coordinate takes 4 bytes (float).
         return starCount * 4 * 3 * 4;
     }
 
-    private static FloatBuffer allocateTextureList(FloatBuffer buffer, int starCount) {
-        int capacity = textureCapacity(starCount);
-
-        // Reuse existing buffer if possible.
-        if (buffer != null && buffer.capacity() >= capacity) {
-            buffer.clear();
-            return buffer;
-        }
-
-        return ByteBuffer.allocateDirect(capacity)
-                .order(ByteOrder.nativeOrder())
-                .asFloatBuffer();
-    }
-
     private static int textureCapacity(int starCount) {
         // We need 4 points to describe a quad, each point requires 2 texture coordinates,
         // and each coordinate takes 4 bytes (float).
         return starCount * 4 * 2 * 4;
-    }
-
-    private static ShortBuffer allocateDrawList(ShortBuffer buffer, int starCount) {
-        int capacity = drawListCapacity(starCount);
-
-        // Reuse existing buffer if possible.
-        if (buffer != null && buffer.capacity() >= capacity) {
-            buffer.clear();
-            return buffer;
-        }
-
-        return ByteBuffer.allocateDirect(capacity)
-                .order(ByteOrder.nativeOrder())
-                .asShortBuffer();
     }
 
     private static int drawListCapacity(int starCount) {
