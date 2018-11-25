@@ -13,6 +13,7 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.FloatBuffer;
 import java.nio.ShortBuffer;
+import java.util.HashMap;
 import java.util.List;
 
 public class StarModel {
@@ -237,9 +238,55 @@ public class StarModel {
         this.drawList.put(drawOrder);
     }
 
+    private static final HashMap<String, float[]> SPECTRAL_COLORS = new HashMap<>();
+    static {
+        SPECTRAL_COLORS.put("O", rgb2openglColor("9BB0FF")); // blue supergiants
+        SPECTRAL_COLORS.put("B", rgb2openglColor("AABFFF")); // blue giants
+        SPECTRAL_COLORS.put("A", rgb2openglColor("CAD7FF")); // blue main-sequence stars
+        SPECTRAL_COLORS.put("F", rgb2openglColor("F8F7FF")); // white main-sequence stars
+        SPECTRAL_COLORS.put("G", rgb2openglColor("FFF4EA")); // yellow main-sequence stars
+        SPECTRAL_COLORS.put("K", rgb2openglColor("FFDAB5")); // orange main-sequence stars
+        SPECTRAL_COLORS.put("M", rgb2openglColor("FFCC6F")); // red giants
+        // TODO: extended star colors
+        SPECTRAL_COLORS.put("W", rgb2openglColor("FFFFFF")); // Wolf-Rayet stars
+        SPECTRAL_COLORS.put("S", rgb2openglColor("FFFFFF")); // S-type stars ;)
+        SPECTRAL_COLORS.put("C", rgb2openglColor("FF8080")); // carbon giants
+        SPECTRAL_COLORS.put("N", rgb2openglColor("FFFFFF")); // carbon giants (too)
+        SPECTRAL_COLORS.put("R", rgb2openglColor("FFFFFF")); // carbon giants (too)
+        SPECTRAL_COLORS.put("D", rgb2openglColor("FFFFFF")); // white dwarfs (degenerates)
+        SPECTRAL_COLORS.put("L", rgb2openglColor("FFFFFF")); // red dwarfs
+        SPECTRAL_COLORS.put("T", rgb2openglColor("FFFFFF")); // methane dwarfs
+        SPECTRAL_COLORS.put("Y", rgb2openglColor("FFFFFF")); // brown dwarfs
+    }
+
+    private static float[] rgb2openglColor(String hex) {
+        float r = ((float) Integer.parseInt(hex.substring(0, 2), 16)) / 256.0f;
+        float g = ((float) Integer.parseInt(hex.substring(2, 4), 16)) / 256.0f;
+        float b = ((float) Integer.parseInt(hex.substring(4, 6), 16)) / 256.0f;
+        return new float[] { r, g, b};
+    }
+
+    private static float[] colorForSpectralClass(String spectralClass) {
+        // Dunno, let's default to the Sun's class.
+        if (spectralClass == null || spectralClass.isEmpty()) {
+            spectralClass = "G";
+        }
+        // Skip class modifiers if any (like in "dG0").
+        int offset = 0;
+        for (; offset < spectralClass.length(); offset++) {
+            if (Character.isUpperCase(spectralClass.charAt(offset))) {
+                break;
+            }
+        }
+        // Only the class itself has meaningful impact on the visible color.
+        // Subdivisions are not that important.
+        spectralClass = spectralClass.substring(offset, offset + 1);
+
+        return SPECTRAL_COLORS.get(spectralClass);
+    }
+
     private void pushStarColorData(Star star) {
-        // TODO: derive color from spectral class
-        float[] color = new float[] { 1.0f, 1.0f, 1.0f };
+        float[] color = colorForSpectralClass(star.spectralClass);
         for (int i = 0; i < 4; i++) {
             this.colorList.put(color);
         }
